@@ -23,6 +23,7 @@ async function load()
       //TODO: process result or logging.
       console.error(stdout, error, stderr);
   }
+  exec('chmod +s "$(which ping)"');
   exec("ping -n 1 104.129.207.9", process);
   exec("ping -n 1 nakup.itesco.cz", process);
 

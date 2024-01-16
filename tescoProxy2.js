@@ -70,9 +70,6 @@ exports.fetchData = async function () {
         let mth = scripts.pop().innerText.match(/(\d+)/g);
         let j = Number(mth[0]) + Number(mth[1] + mth[2]);
         body += j + "}";
-        // fetchOpts.headers["content-type"] = "application/json";
-        // fetchOpts.headers["sec-fetch-dest"] = "empty";
-        // fetchOpts.headers["sec-fetch-mode"] = "cors";
         delete fetchOpts.headers["sec-fetch-user"];
         fetchOpts.headers.Referer = Url;
         fetchOpts.body = body;
@@ -80,7 +77,6 @@ exports.fetchData = async function () {
         console.log(`Tesco firstGet POST https://nakup.itesco.cz/_sec/verify?provider=interstitial ${JSON.stringify(fetchOpts).substr(0, 100)}...`);
         res = await fetch("https://nakup.itesco.cz/_sec/verify?provider=interstitial", fetchOpts).then((response) => {
             for (const pair of response.headers) {
-                // console.log(`provider ${pair[0]}:${pair[1]}`);
                 if (pair[0] == "content-length") continue;
                 if (pair[0] == "set-cookie") {
                     headers.cookie.push(pair[1].split(";")[0]);
@@ -108,22 +104,7 @@ exports.fetchData = async function () {
     const baseUrl = "https://nakup.itesco.cz/groceries/cs-CZ/shop";
     let fetchOpts = {
         agent: proxyAgent,
-        headers: {
-        //     accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        //     "accept-language": "cs,en;q=0.9,en-GB;q=0.8,en-US;q=0.7",
-        //     "cache-control": "no-cache",
-        //     pragma: "no-cache",
-        //     "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"',
-        //     "sec-ch-ua-mobile": "?0",
-        //     "sec-ch-ua-platform": '"Windows"',
-        //     "sec-fetch-dest": "document",
-        //     "sec-fetch-mode": "navigate",
-        //     "sec-fetch-site": "same-origin",
-        //     "sec-fetch-user": "?1",
-        //     "upgrade-insecure-requests": "1",
-        //     referrerPolicy: "strict-origin-when-cross-origin",
-        },
-        // body: null,
+        headers: {}
     };
 
     for (let i = 0; i < categories.length; i++) {

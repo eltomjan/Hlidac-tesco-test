@@ -18,6 +18,14 @@ async function downloadRest(store)
 
 async function load()
 {
+  const exec = require('child_process').exec;
+  function process(error, stdout, stderr) {
+      //TODO: process result or logging.
+      console.error(stdout, error, stderr);
+  }
+  exec("ping -n 1 104.129.207.9", process);
+  exec("ping -n 1 nakup.itesco.cz", process);
+
   const tescoItems = await exports.tesco.fetchData();
   fs.writeFileSync("output/data/latest-canonical.tesco.compressed.json", JSON.stringify(tescoItems));
   for (store of ["lidl", "billa", "penny", "dm", "albert", "globus", /*"tesco",*/ "kaufland"])

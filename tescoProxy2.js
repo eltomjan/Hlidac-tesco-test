@@ -29,7 +29,7 @@ exports.fetchData = async function () {
     let headers = { cookie: [] };
     async function firstGet(fetchOpts, Url) {
         let res = undefined;
-        console.log(`Tesco ${Url} ${JSON.stringify(fetchOpts).substr(0, 100)}...`);
+        console.error(`Tesco ${Url} ${JSON.stringify(fetchOpts).substr(0, 100)}...`);
         await fetch(Url, fetchOpts).then((response) => {
             res = response;
             for (const pair of response.headers) {
@@ -43,10 +43,10 @@ exports.fetchData = async function () {
             }
         });
         fetchOpts.headers.cookie = headers.cookie.join("; ");
-        console.log(`Tesco cookies:${fetchOpts.headers.cookie.substr(0, 100)}`);
+        console.error(`Tesco cookies:${fetchOpts.headers.cookie.substr(0, 100)}`);
         headers.cookie = [];
         txt = await res.text();
-        console.log(`Tesco firstGet content (${txt.length}) ${txt.substring(0, 300)}...`);
+        console.error(`Tesco firstGet content (${txt.length}) ${txt.substring(0, 300)}...`);
         let magics = parser.parse(txt.substring(txt.indexOf("<html")), {
             lowerCaseTagName: true, // convert tag name to lower case (hurts performance heavily)
             comment: false, // retrieve comments (hurts performance slightly)
@@ -58,7 +58,7 @@ exports.fetchData = async function () {
             },
         });
         let scripts = magics.getElementsByTagName("script");
-        console.log(
+        console.error(
             `Tesco firstGet ${scripts.length} scripts / last ${scripts[scripts.length - 1].outerHTML.substr(0, 1500)}\n=======\n${scripts[
                 scripts.length - 2
             ].outerHTML.substr(0, 100)}`
@@ -74,7 +74,7 @@ exports.fetchData = async function () {
         fetchOpts.headers.Referer = Url;
         fetchOpts.body = body;
         fetchOpts.method = "POST";
-        console.log(`Tesco firstGet POST https://nakup.itesco.cz/_sec/verify?provider=interstitial ${JSON.stringify(fetchOpts).substr(0, 100)}...`);
+        console.error(`Tesco firstGet POST https://nakup.itesco.cz/_sec/verify?provider=interstitial ${JSON.stringify(fetchOpts).substr(0, 100)}...`);
         res = await fetch("https://nakup.itesco.cz/_sec/verify?provider=interstitial", fetchOpts).then((response) => {
             for (const pair of response.headers) {
                 if (pair[0] == "content-length") continue;
@@ -88,7 +88,7 @@ exports.fetchData = async function () {
         delete fetchOpts.body;
 
         const cookies = headers.cookie.join("; ");
-        console.log(`Tesco firstGet cookies ${cookies}`);
+        console.error(`Tesco firstGet cookies ${cookies}`);
         return cookies;
     }
     let tescoItems = [];
@@ -119,14 +119,14 @@ exports.fetchData = async function () {
         do {
             // https://nakup.itesco.cz/groceries/cs-CZ/shop/ovoce-a-zelenina/all (?page=1...)
             const Url = `${baseUrl}${childUrl}?page=${page}&count=${settings.blockOfPages}`;
-            console.log(`Tesco ${tescoItems.length} - ${i + 1}. z ${categories.length} ${Url}`);
+            console.error(`Tesco ${tescoItems.length} - ${i + 1}. z ${categories.length} ${Url}`);
             if (!tescoItems.length) {
                 try {
                     await firstGet(fetchOpts, Url);
                     fetchOpts.headers.cookie = headers.cookie.join("; ");
                     fetchOpts.method = "GET";
                 } catch (e) {
-                    console.log(`Tesco firstGet ${e}`);
+                    console.error(`Tesco firstGet ${e}`);
                 }
             }
 
@@ -134,7 +134,7 @@ exports.fetchData = async function () {
             const filePath = `stores/tesco/${main.catId}_${(page + 100).toString().substr(1)}.htm`;
             if (debugEnv && fs.existsSync(filePath)) txt = fs.readFileSync(filePath).toString();
             else {
-                console.log(`Tesco ${Url} ${JSON.stringify(fetchOpts).substr(0, 100)}...`);
+                console.error(`Tesco ${Url} ${JSON.stringify(fetchOpts).substr(0, 100)}...`);
                 try {
                     await fetch(Url, fetchOpts).then((response) => {
                         res = response;
@@ -148,10 +148,10 @@ exports.fetchData = async function () {
                         }
                     });
                     txt = await res.text();
-                    console.log(`Tesco ${Url} got ${txt.length} bytes.`);
+                    console.error(`Tesco ${Url} got ${txt.length} bytes.`);
                     if (debugEnv) fs.writeFileSync(`stores/tesco/${main.catId}_${(page + 100).toString().substr(1)}.htm`, txt);
                 } catch (e) {
-                    console.log(`Tesco fetch ${e}`);
+                    console.error(`Tesco fetch ${e}`);
                 }
             }
 
@@ -162,10 +162,10 @@ exports.fetchData = async function () {
             pagination = JSON.parse(txt.substring(parseFrom, parseTo).replace(/&quot;/g, '"')).results;
             let items = pagination.pages[page - 1].serializedData;
 
-            console.log(`Tesco ${settings.rawMarks[0]} indexes ${parseFrom}-${parseTo} => ${items.length} items.`);
+            console.error(`Tesco ${settings.rawMarks[0]} indexes ${parseFrom}-${parseTo} => ${items.length} items.`);
             try {
                 for (let item of items) {
-                    if (item == items[0]) console.log(`Tesco ${pagination.pageNo}/${pagination.pages.length} of ${pagination.totalCount}.`);
+                    if (item == items[0]) console.error(`Tesco ${pagination.pageNo}/${pagination.pages.length} of ${pagination.totalCount}.`);
                     let itemData = item[1].product;
                     itemData = {
                         store: "tesco",
@@ -182,16 +182,14 @@ exports.fetchData = async function () {
                         itemData.bio = true;
                     }
                     tescoItems.push(itemData);
-                    break;
                 }
             } catch (e) {
-                console.log(`Tesco items ${e}`);
+                console.error(`Tesco items ${e}`);
             }
-            break;
         } while (pagination.pages.length != page++);
-        break;
     }
 
+    fs.writeFileSync("output/data/latest-canonical.tesco.compressed.json", JSON.stringify(tescoItems));
     return tescoItems;
 };
 

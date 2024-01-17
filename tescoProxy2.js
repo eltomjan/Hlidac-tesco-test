@@ -19,6 +19,38 @@ function roundNum(num, decimalExp = [1000, 100]) {
     return Math.round(num * decimalExp[0]) / decimalExp[0];
 }
 exports.fetchData = async function () {
+    // Proxy URL
+    const proxyUrl = `http://${proxyHost}:${proxyPort}`;
+
+    // Create a new Proxy Agent
+    const proxyAgent = new proxy.HttpsProxyAgent(proxyUrl);
+
+    console.error(`Tesco load`);
+    let res = await fetch("https://nakup.itesco.cz/groceries/cs-CZ/shop/ovoce-a-zelenina/all", {
+    "headers": {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "accept-language": "cs,en;q=0.9,en-GB;q=0.8,en-US;q=0.7",
+        "cache-control": "no-cache",
+        "pragma": "no-cache",
+        "sec-ch-ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Microsoft Edge\";v=\"120\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-user": "?1",
+        "upgrade-insecure-requests": "1"
+    },
+    "referrerPolicy": "strict-origin-when-cross-origin",
+    "body": null,
+    "method": "GET",
+    agent: proxyAgent
+    });
+    console.error(`Tesco fetch finished`);
+    txt = await res.text();
+    console.error(`Tesco text ${txt.length} B`);
+    console.error(`Tesco text ${txt}`);
+    
     const settings = {
         blockOfPages: 48,
         bio: "bio",
@@ -92,12 +124,6 @@ exports.fetchData = async function () {
         return cookies;
     }
     let tescoItems = [];
-
-    // Proxy URL
-    const proxyUrl = `http://${proxyHost}:${proxyPort}`;
-
-    // Create a new Proxy Agent
-    const proxyAgent = new proxy.HttpsProxyAgent(proxyUrl);
 
     const catRaw = await fetch("https://nakup.itesco.cz/groceries/cs-CZ/taxonomy", { agent: proxyAgent });
     let categories = await catRaw.json();

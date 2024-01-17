@@ -16,6 +16,13 @@ async function downloadRest(store)
 
 async function load()
 {
+  try {
+    let test = await fetch("https://itesco.cz/Ajax?apage=1&limit=6&type=load-more-products&path=/akcni-nabidky/akcni-nabidky-produkty/&get={}");
+    test = await test.json();
+    console.error(JSON.stringify(test,null,4));
+  } catch (e) {
+    console.log(e);
+  }
   exports.tesco.fetchData();
   for (store of ["lidl", "billa", "penny", "dm", "albert", "globus", /*"tesco",*/ "kaufland"])
     downloadRest(store);

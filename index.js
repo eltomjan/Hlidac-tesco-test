@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const app = express();
 
-exports.tesco = require("./tescoProxy2");
+exports.tesco = require("./tesco");
 
 async function downloadRest(store)
 {

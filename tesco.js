@@ -1,6 +1,6 @@
 const parser = require("node-html-parser");
 const utils = require("./utils");
-const puppeteer = require("puppeteer");
+const PCR = require("puppeteer-chromium-resolver");
 
 const units = {
     kus: { unit: "kus", factor: 1 },
@@ -22,7 +22,7 @@ function readPrice(txt) {
         .replace(/ /, "");
     let num = parseFloat(real);
     if (isNaN(num)) {
-        console.log(`Tesco ${num} invalid.`);
+        console.error(`Tesco ${num} invalid.`);
         return real;
     }
     return num;
@@ -33,7 +33,15 @@ exports.fetchData = async function () {
         bio: "bio",
         bioMiddle: " bio ",
     };
-    let browser = await puppeteer.launch();
+    const options = {};
+    const stats = await PCR(options);
+    let browser = await stats.puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox"],
+        executablePath: stats.executablePath
+    }).catch(function(error) {
+        console.error(error);
+    });
     let pageObj = (await browser.pages())[0];
     await pageObj.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36");
 
@@ -41,15 +49,15 @@ exports.fetchData = async function () {
 
     let categories;
     const fs = require("fs");
-    const debugEnv = fs.existsSync("stores/tesco");
+    const debugEnv = fs.existsSync("output/tesco");
     if (debugEnv) {
-        categories = fs.readFileSync("stores/tesco/taxonomy.json").toString();
+        categories = fs.readFileSync("output/tesco/taxonomy.json").toString();
     } else {
         await pageObj.goto("https://nakup.itesco.cz/groceries/cs-CZ/taxonomy", { waitUntil: "networkidle2" });
         categories = await pageObj.waitForSelector("body");
         categories = await categories.getProperty("innerText");
         categories = await categories.jsonValue();
-        fs.writeFileSync("stores/tesco/taxonomy.json", categories);
+        if (debugEnv) fs.writeFileSync("output/tesco/taxonomy.json", categories);
     }
     categories = JSON.parse(categories);
     const baseUrl = "https://nakup.itesco.cz/groceries/cs-CZ/shop";
@@ -75,11 +83,11 @@ exports.fetchData = async function () {
         do {
             // https://nakup.itesco.cz/groceries/cs-CZ/shop/ovoce-a-zelenina/all (?page=1...)
             const Url = `${baseUrl}${childUrl}?page=${page}&count=${settings.blockOfPages}`;
-            console.log(`Tesco ${tescoItems.length} - ${i + 1}. z ${categories.length} ${Url}`);
+            console.error(`Tesco ${tescoItems.length} - ${i + 1}. z ${categories.length} ${Url}`);
 
             try {
-                console.log(`Tesco ${Url}`);
-                const file = `stores/tesco/${main.catId}_${(page + 100).toString().substr(1)}.htm`;
+                console.error(`Tesco ${Url}`);
+                const file = `output/tesco/${main.catId}_${(page + 100).toString().substr(1)}.htm`;
                 if (debugEnv && fs.existsSync(file)) {
                     await pageObj.goto(`file://${process.cwd().replace(/\\/g, "/")}/${file}`);
                 } else {
@@ -92,7 +100,13 @@ exports.fetchData = async function () {
                             let randomWait = (parseInt(Math.random() * 16) + 1) * 1000;
                             console.error(`${e.message}\n${e.stack}\nWaiting ${randomWait / 1000}s before repeat.`);
                             await browser.close();
-                            const browser2 = await puppeteer.launch();
+                            const browser2 = await stats.puppeteer.launch({
+                                headless: false,
+                                args: ["--no-sandbox"],
+                                executablePath: stats.executablePath
+                            }).catch(function(error) {
+                                console.error(error);
+                            });
                             pageObj = (await browser2.pages())[0];
                             browser = browser2;
                             await new Promise((resolve) => setTimeout(resolve, randomWait));
@@ -101,13 +115,13 @@ exports.fetchData = async function () {
                     txt = await pageObj.waitForSelector("html");
                     txt = await txt.getProperty("outerHTML");
                     txt = await txt.jsonValue();
-                    fs.writeFileSync(`stores/tesco/${main.catId}_${(page + 100).toString().substr(1)}.htm`, txt);
+                    if (debugEnv) fs.writeFileSync(`output/tesco/${main.catId}_${(page + 100).toString().substr(1)}.htm`, txt);
                 }
                 txt = await pageObj.waitForSelector("div.items-count__filter-caption > div.pagination__items-displayed");
                 pagination = await txt.getProperty("innerText");
                 pagination = await pagination.jsonValue();
                 pagination = pagination.match(/(\d+)\s+[\S]+\s+(\d+)\s+[\S]+\s+(\d+)/).slice(1, 4);
-                console.log(`Tesco ${pagination.join(" ")}.`);
+                console.error(`Tesco ${pagination.join(" ")}.`);
 
                 let items = await pageObj.waitForSelector("ul.product-list.grid");
                 items = await items.getProperty("innerHTML");
@@ -140,7 +154,7 @@ exports.fetchData = async function () {
                     item = item.nextElementSibling;
                 } while (item);
             } catch (e) {
-                console.log(`Tesco items ${e}`);
+                console.error(`Tesco items ${e}`);
             }
             page++;
         } while (pagination[1] != pagination[2]);

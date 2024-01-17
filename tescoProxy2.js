@@ -1,8 +1,8 @@
 const parser = require("node-html-parser");
 //const utils = require("./utils");
 const proxy = require('https-proxy-agent');
-const proxyHost = '104.129.207.9';
-const proxyPort = 10200;
+const proxyHost = '157.25.92.74';
+const proxyPort = 3128;
 const fs = require("fs");
 
 const units = {
